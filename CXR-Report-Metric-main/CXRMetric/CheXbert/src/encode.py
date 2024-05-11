@@ -13,6 +13,8 @@ from datasets.unlabeled_dataset import UnlabeledDataset
 from constants import *
 from tqdm import tqdm
 
+import pdb
+
 def collate_fn_no_labels(sample_list):
     """Custom collate function to pad reports in each batch to the max len,
        where the reports have no associated labels
@@ -127,6 +129,7 @@ if __name__ == '__main__':
     out_path = args.output_dir
     do_logits = args.logits
     checkpoint_path = args.checkpoint
+
 
     label(checkpoint_path, csv_path, out_path, do_logits)
     #save_preds(y_pred, csv_path, out_path)

@@ -14,6 +14,8 @@ from sklearn.preprocessing import MinMaxScaler
 import config
 from CXRMetric.radgraph_evaluate_model import run_radgraph
 
+import pdb
+
 """Computes 4 individual metrics and a composite metric on radiology reports."""
 
 
@@ -95,7 +97,7 @@ def add_bleu_col(gt_df, pred_df):
 def add_bertscore_col(gt_df, pred_df, use_idf):
     """Computes BERTScore and adds scores as a column to prediction df."""
     test_reports = gt_df[REPORT_COL_NAME].tolist()
-    test_reports = [re.sub(r' +', ' ', test) for test in test_reports]
+    test_reports = [re.sub(r' +', ' ', str(test)) for test in test_reports]
     method_reports = pred_df[REPORT_COL_NAME].tolist()
     method_reports = [re.sub(r' +', ' ', report) for report in method_reports]
 
@@ -136,21 +138,24 @@ def add_radgraph_col(pred_df, entities_path, relations_path):
         scores = json.load(f)
         for study_id, (f1, _, _) in scores.items():
             try:
-                study_id_to_radgraph[int(study_id)] = float(f1)
+                study_id_to_radgraph[study_id] = float(f1)
+                # study_id_to_radgraph[int(study_id)] = float(f1)
             except:
                 continue
     with open(relations_path, "r") as f:
         scores = json.load(f)
         for study_id, (f1, _, _) in scores.items():
             try:
-                study_id_to_radgraph[int(study_id)] += float(f1)
-                study_id_to_radgraph[int(study_id)] /= float(2)
+                study_id_to_radgraph[study_id] += float(f1)
+                study_id_to_radgraph[study_id] /= float(2)
+                # study_id_to_radgraph[int(study_id)] += float(f1)
+                # study_id_to_radgraph[int(study_id)] /= float(2)
             except:
                 continue
     radgraph_scores = []
     count = 0
     for i, row in pred_df.iterrows():
-        radgraph_scores.append(study_id_to_radgraph[int(row[STUDY_ID_COL_NAME])])
+        radgraph_scores.append(study_id_to_radgraph[row[STUDY_ID_COL_NAME]])
     pred_df["radgraph_combined"] = radgraph_scores
     return pred_df
 
@@ -162,8 +167,12 @@ def calc_metric(gt_csv, pred_csv, out_csv, use_idf): # TODO: support single metr
         os.path.dirname(gt_csv), f"cache_{os.path.basename(gt_csv)}")
     cache_pred_csv = os.path.join(
         os.path.dirname(pred_csv), f"cache_{os.path.basename(pred_csv)}")
+
+    
     gt = pd.read_csv(gt_csv)\
         .sort_values(by=[STUDY_ID_COL_NAME]).reset_index(drop=True)
+
+    
     pred = pd.read_csv(pred_csv)\
         .sort_values(by=[STUDY_ID_COL_NAME]).reset_index(drop=True)
 
@@ -193,6 +202,8 @@ def calc_metric(gt_csv, pred_csv, out_csv, use_idf): # TODO: support single metr
     os.system(f"mkdir -p {cache_path}")
     os.system(f"python CXRMetric/CheXbert/src/encode.py -c {CHEXBERT_PATH} -d {cache_pred_csv} -o {pred_embed_path}")
     os.system(f"python CXRMetric/CheXbert/src/encode.py -c {CHEXBERT_PATH} -d {cache_gt_csv} -o {gt_embed_path}")
+
+
     pred = add_semb_col(pred, pred_embed_path, gt_embed_path)
 
     # run radgraph to create that column

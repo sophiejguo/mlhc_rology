@@ -4,6 +4,8 @@ import json
 from tqdm import tqdm
 import argparse
 
+import pdb
+
 def get_impressions_from_csv(path):	
         df = pd.read_csv(path)
         imp = df['report']
@@ -17,7 +19,10 @@ def tokenize(impressions, tokenizer):
         new_impressions = []
         print("\nTokenizing report impressions. All reports are cut off at 512 tokens.")
         for i in tqdm(range(impressions.shape[0])):
-                tokenized_imp = tokenizer.tokenize(impressions.iloc[i])
+                try:
+                        tokenized_imp = tokenizer.tokenize(impressions.iloc[i])
+                except:
+                        pdb.set_trace()
                 if tokenized_imp: #not an empty report
                         res = tokenizer.encode_plus(tokenized_imp)['input_ids']
                         if len(res) > 512: #length exceeds maximum size
